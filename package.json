@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "A local nutrition journal for people and their agents.",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22"

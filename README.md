@@ -160,3 +160,7 @@ This initial version covers saved foods, meal logging, dated targets, and daily 
 period summaries. Recipes can be saved as foods with known per-serving values.
 Automatic recipe calculation, barcode lookup, body measurements, synchronization,
 and a graphical interface are outside the initial scope.
+
+## License
+
+[MIT](LICENSE). Copyright (c) 2026 Flexpa.

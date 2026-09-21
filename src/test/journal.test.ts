@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -36,8 +36,12 @@ function fixture() {
   return { root, store, run };
 }
 
+function cliOutput(root: string, ...args: string[]): string {
+  return execFileSync(process.execPath, [cli, ...args, "--data", root], { encoding: "utf8" });
+}
+
 function cliCall(root: string, ...args: string[]): unknown {
-  return JSON.parse(execFileSync(process.execPath, [cli, ...args, "--data", root], { encoding: "utf8" }));
+  return JSON.parse(cliOutput(root, ...args));
 }
 
 const summarySchema = z.object({
@@ -190,6 +194,51 @@ test("Markdown examples match the accepted storage schema", () => {
   assert.equal(mealSchema.parse(store.readMeal("2026-09-21-breakfast").record).items[0]?.nutrients.kcal, 105);
 });
 
+test("native NDJSON preserves every record, including targets, unused foods, void meals, and multiline notes", () => {
+  const { root, store, run } = fixture();
+  const profile = store.readProfile();
+  store.putProfile({ ...profile.record, targets: [{ from: "2026-09-01", kcal: 2000 }], notes: 'Preferences\nGreek: τροφή; "quoted"' }, profile.revision);
+  run("put_food", exampleFood);
+  run("log_meal", exampleMeal);
+  const food = store.readFood(exampleFood.food.id).record;
+  store.putFood({ ...food, id: "unused-food", nutrients: { ...food.nutrients, protein_g: null }, notes: "Line 1\nLine 2" });
+  const meal = store.readMeal(exampleMeal.meal.id).record;
+  store.putMeal({ ...meal, id: "void-meal", status: "void", notes: "Duplicate\nKeep this record." });
+  const before = [store.readProfile(), ...store.list("food").map(id => store.readFood(id)), ...store.list("meal").map(id => store.readMeal(id))];
+  const exported = z.string().parse(run("export_ndjson"));
+  assert.ok(exported.endsWith("\n"));
+  const lines = exported.slice(0, -1).split("\n");
+  assert.equal(lines.length, 5);
+  assert.deepEqual(lines.map(line => JSON.parse(line)), before.map(document => document.record));
+  assert.equal(cliOutput(root, "export", "ndjson"), exported);
+  assert.equal(cliOutput(root, "call", "export_ndjson"), exported);
+  assert.equal(run("export_ndjson"), exported);
+  assert.deepEqual([store.readProfile(), ...store.list("food").map(id => store.readFood(id)), ...store.list("meal").map(id => store.readMeal(id))], before);
+});
+
+test("native NDJSON exports an empty journal's profile and rejects filters", () => {
+  const { root, store, run } = fixture();
+  assert.equal(run("export_ndjson"), `${JSON.stringify(store.readProfile().record)}\n`);
+  assert.throws(() => run("export_ndjson", { from: "2026-09-21" }));
+  for (const args of [["--from", "2026-09-21", "--to", "2026-09-21"], ["--format", "json"], ["--patient-id", "person"], ["--resource-type", "Patient"]]) {
+    const result = spawnSync(process.execPath, [cli, "export", "ndjson", "--data", root, ...args], { encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /exports the complete journal/);
+  }
+});
+
+test("native NDJSON stops on malformed records without emitting a partial export", () => {
+  const { root, run } = fixture();
+  run("put_food", exampleFood);
+  writeFileSync(join(root, "journal", "broken.md"), "malformed record\n");
+  assert.throws(() => run("export_ndjson"), /Invalid record/);
+  const result = spawnSync(process.execPath, [cli, "export", "ndjson", "--data", root], { encoding: "utf8" });
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /Invalid record/);
+});
+
 test("CLI and a real stdio MCP client share operations, schemas, resources, and results", async () => {
   const root = directory();
   cliCall(root, "init", "--timezone", "America/Toronto");
@@ -213,6 +262,26 @@ test("CLI and a real stdio MCP client share operations, schemas, resources, and 
     const filteredFhir = await client.callTool({ name: "export_fhir", arguments: { patient_id: "example-person", from: "2026-09-21", to: "2026-09-21" } });
     const filteredContent = z.array(z.object({ type: z.literal("text"), text: z.string() })).parse(filteredFhir.content);
     assert.deepEqual(JSON.parse(filteredContent[0]?.text ?? "null"), cliCall(root, "export", "fhir5", "--patient-id", "example-person", "--from", "2026-09-21", "--to", "2026-09-21"));
+    const native = await client.callTool({ name: "export_ndjson", arguments: {} });
+    assert.notEqual(native.isError, true);
+    const nativeContent = z.array(z.object({ type: z.literal("text"), text: z.string() })).parse(native.content);
+    assert.equal(nativeContent[0]?.text, cliOutput(root, "export", "ndjson"));
+    for (const resource_type of ["Patient", "NutritionIntake"]) {
+      const ndjson = await client.callTool({ name: "export_fhir", arguments: { patient_id: "example-person", format: "ndjson", resource_type } });
+      assert.notEqual(ndjson.isError, true);
+      const ndjsonContent = z.array(z.object({ type: z.literal("text"), text: z.string() })).parse(ndjson.content);
+      assert.equal(ndjsonContent[0]?.text, cliOutput(root, "export", "fhir5", "--patient-id", "example-person", "--format", "ndjson", "--resource-type", resource_type));
+    }
+    const emptyNdjson = await client.callTool({ name: "export_fhir", arguments: {
+      patient_id: "example-person", format: "ndjson", resource_type: "NutritionIntake", from: "2026-09-01", to: "2026-09-01",
+    } });
+    assert.notEqual(emptyNdjson.isError, true);
+    assert.deepEqual(emptyNdjson.content, [{ type: "text", text: "" }]);
+    assert.equal(cliOutput(root, "export", "fhir5", "--patient-id", "example-person", "--format", "ndjson", "--resource-type", "NutritionIntake", "--from", "2026-09-01", "--to", "2026-09-01"), "");
+    const missingType = await client.callTool({ name: "export_fhir", arguments: { patient_id: "example-person", format: "ndjson" } });
+    assert.equal(missingType.isError, true);
+    const badNative = await client.callTool({ name: "export_ndjson", arguments: { from: "2026-09-01" } });
+    assert.equal(badNative.isError, true);
     assert.throws(() => cliCall(root, "export", "fhir4", "--patient-id", "example-person"));
     assert.throws(() => cliCall(root, "export", "fhir5"));
     const bad = await client.callTool({ name: "log_meal", arguments: { meal: { id: "bad" } } });

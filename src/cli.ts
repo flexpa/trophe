@@ -20,7 +20,9 @@ const help = `Trophe — a local nutrition journal for people and their agents.
   trophe meal list --from YYYY-MM-DD --to YYYY-MM-DD
   trophe day YYYY-MM-DD
   trophe summary --from YYYY-MM-DD --to YYYY-MM-DD
+  trophe export ndjson
   trophe export fhir5 --patient-id <id> [--from YYYY-MM-DD --to YYYY-MM-DD]
+  trophe export fhir5 --patient-id <id> --format ndjson --resource-type Patient|NutritionIntake
   trophe profile get
   trophe profile set --input profile.json
   trophe validate
@@ -31,7 +33,7 @@ const help = `Trophe — a local nutrition journal for people and their agents.
 
 Global: --data <directory> (default: TROPHE_HOME or ~/.trophe).
 Input files contain tool arguments. Use --input - for JSON on stdin.
-All results are JSON. Run tools to inspect the shared CLI/MCP contracts.
+Results are JSON, or raw NDJSON for NDJSON exports. Run tools for input contracts.
 `;
 
 async function main(): Promise<void> {
@@ -42,6 +44,7 @@ async function main(): Promise<void> {
       input: { type: "string" }, json: { type: "string" }, query: { type: "string" },
       from: { type: "string" }, to: { type: "string" }, help: { type: "boolean", short: "h" },
       "patient-id": { type: "string" },
+      format: { type: "string" }, "resource-type": { type: "string" },
     },
   });
   const [command, subcommand, id] = positionals;
@@ -73,9 +76,17 @@ async function main(): Promise<void> {
     case "day": tool = "summarize"; args = { from: subcommand, to: subcommand }; break;
     case "summary": tool = "summarize"; args = range; break;
     case "export":
-      if (subcommand !== "fhir5") throw new Error("Supported export format: fhir5.");
+      if (subcommand === "ndjson") {
+        if ([values["patient-id"], values.from, values.to, values.format, values["resource-type"]].some(value => value !== undefined)) {
+          throw new Error("Native NDJSON exports the complete journal. Omit patient, date, format, and resource-type options.");
+        }
+        tool = "export_ndjson";
+        args = {};
+        break;
+      }
+      if (subcommand !== "fhir5") throw new Error("Supported exports: ndjson, fhir5.");
       tool = "export_fhir";
-      args = { patient_id: values["patient-id"], ...range };
+      args = { patient_id: values["patient-id"], format: values.format, resource_type: values["resource-type"], ...range };
       break;
     case "food":
       if (subcommand === "list") { tool = "search_foods"; args = { query: values.query ?? "" }; }
@@ -101,7 +112,7 @@ async function main(): Promise<void> {
 }
 
 function output(value: unknown): void {
-  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+  process.stdout.write(typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
 }
 
 main().catch(error => {

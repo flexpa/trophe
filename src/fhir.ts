@@ -4,6 +4,7 @@ import type {
   NutritionProductNutrient, Patient, SimpleQuantity,
 } from "fhir/r5.js";
 import { z } from "zod";
+import { toNdjson } from "./ndjson.js";
 import { dateSchema, nutrientKeys, rangeSchema, type Meal, type Nutrients } from "./schema.js";
 
 const namespace = "https://github.com/flexpa/trophe";
@@ -21,10 +22,14 @@ export const fhirExportSchema = z.strictObject({
   patient_id: z.string().regex(/^[A-Za-z0-9.-]{1,64}$/, "Use a FHIR ID: 1–64 letters, digits, hyphens, or periods."),
   from: dateSchema.optional(),
   to: dateSchema.optional(),
+  format: z.enum(["json", "ndjson"]).default("json"),
+  resource_type: z.enum(["Patient", "NutritionIntake"]).optional(),
 }).refine(input =>
   (input.from === undefined && input.to === undefined) ||
   rangeSchema.safeParse({ from: input.from, to: input.to }).success,
-"Provide both from and to as an ascending range of at most 366 days, or omit both.");
+"Provide both from and to as an ascending range of at most 366 days, or omit both.")
+  .refine(input => input.format === "ndjson" ? input.resource_type !== undefined : input.resource_type === undefined,
+    "NDJSON requires resource_type. JSON Bundle exports do not accept resource_type.");
 
 function uuid(patientId: string, kind: string, id = ""): string {
   const hash = createHash("sha1")
@@ -160,4 +165,16 @@ export function exportFhir(meals: Meal[], patientId: string): Bundle<Patient | N
         }),
     ],
   };
+}
+
+/** Exports one FHIR resource type per file, using relative patient references outside a Bundle. */
+export function exportFhirNdjson(meals: Meal[], patientId: string, resourceType: "Patient" | "NutritionIntake"): string {
+  const resources: (Patient | NutritionIntake)[] = [];
+  for (const { resource } of exportFhir(meals, patientId).entry ?? []) {
+    if (!resource || resource.resourceType !== resourceType) continue;
+    resources.push(resource.resourceType === "NutritionIntake"
+      ? { ...resource, subject: { reference: `Patient/${patientId}` } }
+      : resource);
+  }
+  return toNdjson(resources, "\r\n");
 }

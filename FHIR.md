@@ -30,15 +30,52 @@ Dates are optional but must be supplied together. They use the profile timezone,
 are inclusive, and follow the existing 366-day maximum for bounded reports.
 Omitting both dates exports the entire meal history, without a date-range limit.
 
-The CLI prints the Bundle itself as JSON, suitable for redirecting to a file.
-The MCP response carries the same JSON in its text content. Export is read-only.
+The default format is `json`. The CLI prints the Bundle itself, suitable for
+redirecting to a file. The MCP response carries the same JSON in its text content.
+Export is read-only.
+
+## NDJSON
+
+```sh
+yarn trophe export fhir5 --patient-id example-person \
+  --format ndjson --resource-type Patient > Patient.ndjson
+yarn trophe export fhir5 --patient-id example-person \
+  --format ndjson --resource-type NutritionIntake > NutritionIntake.ndjson
+```
+
+For MCP, call `export_fhir` with:
+
+```json
+{
+  "patient_id": "example-person",
+  "format": "ndjson",
+  "resource_type": "NutritionIntake"
+}
+```
+
+The [FHIR NDJSON format](https://hl7.org/fhir/R5/nd-json.html) uses one resource
+type per file and the media type `application/fhir+ndjson`. Each line is a compact
+JSON resource followed by CRLF. There is no Bundle or entry wrapper. Nutrition
+products remain contained in each intake. `resource_type` is required for NDJSON
+and is not accepted for JSON Bundle exports.
+
+Both CLI stdout and MCP text content carry raw NDJSON. Save the text directly,
+without JSON-encoding it again. Optional `from` and `to` bounds work as above.
+An empty meal selection produces an empty NutritionIntake file; the Patient file
+always contains one resource. Use the same patient ID for both files. Intake
+subjects reference `Patient/<patient_id>`; resource IDs are the same as in the
+Bundle export.
+
+These are local file exports. Trophe does not provide a FHIR Bulk Data HTTP
+endpoint. To export the profile, targets, and saved-food catalog in Trophe's own
+record format, use [`export ndjson`](SCHEMA.md#native-ndjson).
 
 ## Mapping
 
 | Trophe data | FHIR representation |
 | --- | --- |
 | Journal subject | One minimal `Patient` with the supplied ID |
-| Export | A `Bundle` with `type: collection` |
+| Export | A `Bundle` with `type: collection`, or one selected resource type as NDJSON |
 | Meal | One `NutritionIntake` |
 | Meal ID | Business `identifier`, scoped to the supplied patient ID |
 | Eating timestamp | `occurrenceDateTime`, preserving the source offset and precision |
@@ -90,7 +127,7 @@ different subjects. The minimal Patient contains no invented name, birth date,
 or identifier from an external system. A FHIR server import must still map it to
 the correct person. This collection Bundle is not a transaction request.
 
-An empty journal or empty date range produces a Bundle containing only the Patient.
+In JSON format, an empty journal or empty date range produces a Bundle containing only the Patient.
 Voided meals are retained so a receiver can see their error status. Saved-food
 catalog entries without consumption, profile targets, preferences, and attachment
 file contents are not exported. Source links and Markdown notes are included.

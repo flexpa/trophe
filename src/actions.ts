@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { exportFhir, fhirExportSchema } from "./fhir.js";
+import { exportFhir, exportFhirNdjson, fhirExportSchema } from "./fhir.js";
+import { toNdjson } from "./ndjson.js";
 import {
   dateSchema, foodSchema, idSchema, mealInputSchema, mealSchema,
   nutrientKeys, profileSchema, rangeSchema, type Meal, type Nutrients, type Profile,
@@ -118,12 +119,21 @@ export function createActions(store: Store): Action[] {
       input => store.putMeal(input.meal, input.expected_revision)),
     action("list_meals", "List meals, including void records, within inclusive local date bounds.",
       rangeSchema, true, input => mealsInRange(input.from, input.to).meals),
-    action("export_fhir", "Export a FHIR R5 collection Bundle with a Patient and logged meal snapshots. Includes void meals as entered-in-error. Optional dates use the profile timezone.",
+    action("export_ndjson", "Export the complete native journal as raw NDJSON: profile, saved foods, and meals including void records. One record per line, with notes and unknown values preserved.",
+      z.strictObject({}), true, () => toNdjson([
+        store.readProfile().record,
+        ...store.list("food").map(id => store.readFood(id).record),
+        ...store.list("meal").map(id => store.readMeal(id).record),
+      ])),
+    action("export_fhir", "Export FHIR R5 as a JSON Bundle or raw NDJSON for one resource_type (Patient or NutritionIntake). Includes void meals as entered-in-error. Optional dates use the profile timezone.",
       fhirExportSchema, true, input => {
         const meals = input.from !== undefined && input.to !== undefined
           ? mealsInRange(input.from, input.to).meals
           : store.list("meal").map(id => store.readMeal(id));
-        return exportFhir(meals.map(value => value.record), input.patient_id);
+        const records = meals.map(value => value.record);
+        return input.format === "ndjson" && input.resource_type !== undefined
+          ? exportFhirNdjson(records, input.patient_id, input.resource_type)
+          : exportFhir(records, input.patient_id);
       }),
     action("summarize", "Compute daily and period totals from active meals. Unknown values and days without logs stay explicit.",
       rangeSchema, true, input => {

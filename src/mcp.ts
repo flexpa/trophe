@@ -29,7 +29,7 @@ export function createServer(directory: string): McpServer {
       const action = actions.find(candidate => candidate.name === request.params.name);
       if (!action) throw new Error(`Unknown tool: ${request.params.name}`);
       const result = action.run(request.params.arguments ?? {});
-      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+      return { content: [{ type: "text", text: typeof result === "string" ? result : JSON.stringify(result) }] };
     } catch (error) {
       return { isError: true, content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }] };
     }

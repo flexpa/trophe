@@ -8,6 +8,24 @@ Use `trophe schema` for exact JSON Schemas generated from the runtime validators
 Use `trophe tools` for action arguments. Unknown fields are rejected. The only
 supported `schema_version` is `1`.
 
+## Native NDJSON
+
+`export ndjson` (MCP: `export_ndjson` with `{}`) exports one compact UTF-8 JSON
+object per line, ending each line with LF. The first record is the profile,
+followed by foods sorted by ID, then meals sorted by ID. Even an empty journal
+exports its profile. All records retain `schema_version: 1` and their `kind`.
+The record schemas from `trophe schema` also describe these objects.
+
+Markdown bodies become `notes` strings. JSON escaping preserves embedded newlines,
+quotes, and Unicode text. Unknown nutrient values remain `null`; zero remains
+zero. Profile targets, unused saved foods, and void meals are included. API
+revision envelopes, computed summaries, and attachment file contents are excluded.
+This is a record export, not an archive of the original Markdown formatting.
+
+The operation takes no filters and does not change the journal. A malformed
+record fails the export before any NDJSON is emitted. Export while the journal
+is idle if you need all records to reflect the same point in time.
+
 ## Shared values
 
 - IDs match `[a-z0-9][a-z0-9_-]{0,99}` and equal their filename without `.md`.

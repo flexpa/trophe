@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import type { NutritionIntake, NutritionProduct } from "fhir/r5.js";
 import { createActions } from "../actions.js";
-import { exportFhir, fhirExportSchema } from "../fhir.js";
+import { exportFhir, exportFhirNdjson, fhirExportSchema } from "../fhir.js";
 import { mealSchema, type Meal } from "../schema.js";
 import { openStore } from "../store.js";
 
@@ -123,7 +123,31 @@ test("FHIR narrative escapes user text and invalid export parameters fail", () =
     { patient_id: "person", from: "2026-09-22", to: "2026-09-21" },
     { patient_id: "person", from: "2026-02-30", to: "2026-03-01" },
     { patient_id: "person", from: "2020-01-01", to: "2026-09-21" },
+    { patient_id: "person", format: "ndjson" },
+    { patient_id: "person", resource_type: "Patient" },
+    { patient_id: "person", format: "json", resource_type: "Patient" },
+    { patient_id: "person", format: "xml" },
+    { patient_id: "person", format: "ndjson", resource_type: "Bundle" },
   ]) assert.equal(fhirExportSchema.safeParse(input).success, false);
+});
+
+test("FHIR NDJSON separates resource types and preserves escaped notes, snapshots, and stable IDs", () => {
+  const original = meal({ notes: 'Line 1\r\nLine 2: "τροφή"' });
+  original.items = original.items.map(item => ({ ...item, nutrients: { ...item.nutrients, protein_g: null } }));
+  const voided = meal({ id: "void-meal", status: "void", eaten_at: "2026-09-21T09:00:00-04:00" });
+  const meals = [voided, original];
+  const patient = JSON.parse(exportFhirNdjson(meals, "person", "Patient"));
+  assert.equal(patient.resourceType, "Patient");
+  assert.equal(patient.id, "person");
+  const exported = exportFhirNdjson(meals, "person", "NutritionIntake");
+  assert.ok(exported.endsWith("\r\n"));
+  const lines = exported.slice(0, -2).split("\r\n");
+  assert.equal(lines.length, 2);
+  const expected = [original, voided].map(value => ({ ...intake(exportFhir([value], "person")), subject: { reference: "Patient/person" } }));
+  assert.deepEqual(lines.map(line => JSON.parse(line)), expected);
+  assert.equal(exportFhirNdjson(meals, "person", "NutritionIntake"), exported);
+  assert.equal(exportFhirNdjson([], "person", "NutritionIntake"), "");
+  assert.deepEqual(JSON.parse(exportFhirNdjson([], "person", "Patient")), patient);
 });
 
 test("shared FHIR action applies local date bounds, exports snapshots, and never changes the journal", () => {
@@ -141,6 +165,9 @@ test("shared FHIR action applies local date bounds, exports snapshots, and never
     assert.deepEqual(action.run({ patient_id: "person", from: "2026-09-21", to: "2026-09-21" }), exportFhir([previousDay], "person"));
     assert.deepEqual(action.run({ patient_id: "person" }), exportFhir([previousDay, nextDay], "person"));
     assert.deepEqual(action.run({ patient_id: "person", from: "2026-09-01", to: "2026-09-01" }), exportFhir([], "person"));
+    assert.deepEqual(action.run({ patient_id: "person", format: "json" }), exportFhir([previousDay, nextDay], "person"));
+    assert.equal(action.run({ patient_id: "person", format: "ndjson", resource_type: "NutritionIntake", from: "2026-09-21", to: "2026-09-21" }), exportFhirNdjson([previousDay], "person", "NutritionIntake"));
+    assert.equal(action.run({ patient_id: "person", format: "ndjson", resource_type: "NutritionIntake", from: "2026-09-01", to: "2026-09-01" }), "");
     assert.deepEqual([store.readProfile(), ...store.list("meal").map(id => store.readMeal(id))], before);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

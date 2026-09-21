@@ -50,7 +50,8 @@ To use a separate example journal, add `--data ./data` to **every** command.
 agent configuration. Opening a missing journal fails; only `init` creates one.
 
 The executable is `node /absolute/path/to/trophe/dist/cli.js`. `yarn trophe` is a
-repository shortcut. All command results are JSON, and errors go to stderr.
+repository shortcut. Command results are JSON, or raw NDJSON for NDJSON exports.
+Errors go to stderr.
 
 ## Commands
 
@@ -67,13 +68,30 @@ repository shortcut. All command results are JSON, and errors go to stderr.
 | `meal update --input <file>` | `update_meal` | Correct or void a meal |
 | `meal list --from <date> --to <date>` | `list_meals` | Read a date range, including void records |
 | `day <date>` / `summary --from <date> --to <date>` | `summarize` | Calculate active meal totals |
-| `export fhir5 --patient-id <id>` | `export_fhir` | Export meal history as a FHIR R5 Bundle |
+| `export ndjson` | `export_ndjson` | Export all native records, one JSON object per line |
+| `export fhir5 --patient-id <id>` | `export_fhir` | Export meal history as a FHIR R5 Bundle or NDJSON |
 | `validate` | `validate_journal` | Check all records |
 
 Use `tools` to print all tool argument schemas. `schema` prints the stored record
 schemas. `call <tool> --json '{...}'` invokes any shared action directly.
 `--input -` reads JSON from stdin. JSON input files contain the full tool
 arguments: for example, `{ "meal": { ... } }`.
+
+## Native NDJSON export
+
+```sh
+yarn trophe export ndjson > journal.ndjson
+```
+
+This exports the profile, all saved foods, and all meals, including void records.
+Each line is one complete native record with `schema_version`, `kind`, and `notes`.
+Targets, evidence, unknown values (`null`), and known zero values are preserved.
+There is no outer array or revision envelope. The MCP tool `export_ndjson` takes
+no arguments and returns the same raw text.
+
+The export reads the whole journal; it has no date filter. Attachment references
+in notes are included, but attachment files are not. See [SCHEMA.md](SCHEMA.md#native-ndjson)
+for ordering and format details. Markdown remains the source of truth.
 
 ## FHIR export
 
@@ -84,13 +102,23 @@ yarn trophe export fhir5 --patient-id example-person > nutrition.fhir.json
 # Optional inclusive dates use the journal's configured timezone.
 yarn trophe export fhir5 --patient-id example-person \
   --from 2026-09-01 --to 2026-09-30 > september.fhir.json
+
+# FHIR NDJSON uses one resource type per file.
+yarn trophe export fhir5 --patient-id example-person \
+  --format ndjson --resource-type Patient > Patient.ndjson
+yarn trophe export fhir5 --patient-id example-person \
+  --format ndjson --resource-type NutritionIntake > NutritionIntake.ndjson
 ```
 
-The output is a native FHIR R5 `Bundle` of type `collection`: a minimal `Patient`
+The default output is a native FHIR R5 `Bundle` of type `collection`: a minimal `Patient`
 and one `NutritionIntake` per logged meal. Each intake contains `NutritionProduct`
 snapshots with the consumed portions, nutrition values, sources, and assumptions.
 Voided meals are included with `status: entered-in-error`. Export only reads local
 records; it does not upload data or require a FHIR server.
+
+With `--format ndjson`, the output is one FHIR resource per line. Select `Patient`
+or `NutritionIntake` with `--resource-type`. The same MCP tool accepts
+`"format": "ndjson"` and `"resource_type": "Patient"` or `"NutritionIntake"`.
 
 Use a stable patient ID that you choose for this journal. Trophe does not infer
 demographics or match the subject to an external patient record. The export covers

@@ -67,12 +67,36 @@ repository shortcut. All command results are JSON, and errors go to stderr.
 | `meal update --input <file>` | `update_meal` | Correct or void a meal |
 | `meal list --from <date> --to <date>` | `list_meals` | Read a date range, including void records |
 | `day <date>` / `summary --from <date> --to <date>` | `summarize` | Calculate active meal totals |
+| `export fhir5 --patient-id <id>` | `export_fhir` | Export meal history as a FHIR R5 Bundle |
 | `validate` | `validate_journal` | Check all records |
 
 Use `tools` to print all tool argument schemas. `schema` prints the stored record
 schemas. `call <tool> --json '{...}'` invokes any shared action directly.
 `--input -` reads JSON from stdin. JSON input files contain the full tool
 arguments: for example, `{ "meal": { ... } }`.
+
+## FHIR export
+
+```sh
+# Export all logged meals. Supply the ID for the journal's subject.
+yarn trophe export fhir5 --patient-id example-person > nutrition.fhir.json
+
+# Optional inclusive dates use the journal's configured timezone.
+yarn trophe export fhir5 --patient-id example-person \
+  --from 2026-09-01 --to 2026-09-30 > september.fhir.json
+```
+
+The output is a native FHIR R5 `Bundle` of type `collection`: a minimal `Patient`
+and one `NutritionIntake` per logged meal. Each intake contains `NutritionProduct`
+snapshots with the consumed portions, nutrition values, sources, and assumptions.
+Voided meals are included with `status: entered-in-error`. Export only reads local
+records; it does not upload data or require a FHIR server.
+
+Use a stable patient ID that you choose for this journal. Trophe does not infer
+demographics or match the subject to an external patient record. The export covers
+meal history; unused saved foods and profile targets are not included. See
+[FHIR.md](FHIR.md) for mappings, units, identity, and export limits, and
+[examples/fhir-bundle.json](examples/fhir-bundle.json) for a fictional example.
 
 ## Agent setup
 
@@ -97,7 +121,7 @@ Agents with shell access can use the CLI. Agents with MCP support can use:
 
 The server uses stdio. It opens no network port. It exposes the guide as
 `trophe://guide`, the schema explanation as `trophe://schema-guide`, and generated
-JSON Schemas as `trophe://schemas`.
+JSON Schemas as `trophe://schemas`. The FHIR export guide is `trophe://fhir-guide`.
 
 Photo interpretation and online food lookup use the host agent's capabilities.
 Trophe itself does not call a model or nutrition provider. An agent can save photo

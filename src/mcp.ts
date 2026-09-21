@@ -34,7 +34,9 @@ export function createServer(directory: string): McpServer {
       return { isError: true, content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }] };
     }
   });
-  for (const [name, file] of [["guide", "../SKILL.md"], ["schema-guide", "../SCHEMA.md"]] as const) {
+  for (const [name, file] of [
+    ["guide", "../SKILL.md"], ["schema-guide", "../SCHEMA.md"], ["fhir-guide", "../FHIR.md"],
+  ] as const) {
     server.registerResource(name, `trophe://${name}`, { mimeType: "text/markdown" }, uri => ({
       contents: [{ uri: uri.href, mimeType: "text/markdown", text: readFileSync(new URL(file, import.meta.url), "utf8") }],
     }));

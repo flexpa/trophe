@@ -23,6 +23,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/fhir": "^0.0.44",
     "@types/node": "^22.19.15",
     "typescript": "^5.9.3"
   }

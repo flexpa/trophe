@@ -20,6 +20,7 @@ const help = `Trophe — a local nutrition journal for people and their agents.
   trophe meal list --from YYYY-MM-DD --to YYYY-MM-DD
   trophe day YYYY-MM-DD
   trophe summary --from YYYY-MM-DD --to YYYY-MM-DD
+  trophe export fhir5 --patient-id <id> [--from YYYY-MM-DD --to YYYY-MM-DD]
   trophe profile get
   trophe profile set --input profile.json
   trophe validate
@@ -40,6 +41,7 @@ async function main(): Promise<void> {
       data: { type: "string" }, timezone: { type: "string" },
       input: { type: "string" }, json: { type: "string" }, query: { type: "string" },
       from: { type: "string" }, to: { type: "string" }, help: { type: "boolean", short: "h" },
+      "patient-id": { type: "string" },
     },
   });
   const [command, subcommand, id] = positionals;
@@ -70,6 +72,11 @@ async function main(): Promise<void> {
     case "validate": tool = "validate_journal"; args = {}; break;
     case "day": tool = "summarize"; args = { from: subcommand, to: subcommand }; break;
     case "summary": tool = "summarize"; args = range; break;
+    case "export":
+      if (subcommand !== "fhir5") throw new Error("Supported export format: fhir5.");
+      tool = "export_fhir";
+      args = { patient_id: values["patient-id"], ...range };
+      break;
     case "food":
       if (subcommand === "list") { tool = "search_foods"; args = { query: values.query ?? "" }; }
       if (subcommand === "get") { tool = "get_food"; args = { id }; }

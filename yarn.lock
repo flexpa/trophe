@@ -47,6 +47,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/fhir@npm:^0.0.44":
+  version: 0.0.44
+  resolution: "@types/fhir@npm:0.0.44"
+  checksum: 10c0/1b6c9d5247c96c919ebc59dfb6945164c49302579eef915840a957c0e8021ec6a97b42c3bea1f0b5a79673696b8e470ec0caef68d5ee3bf1bf5f7df454fa08fe
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:^22.19.15":
   version: 22.20.4
   resolution: "@types/node@npm:22.20.4"
@@ -846,6 +853,7 @@ __metadata:
   resolution: "trophe@workspace:."
   dependencies:
     "@modelcontextprotocol/sdk": "npm:^1.27.1"
+    "@types/fhir": "npm:^0.0.44"
     "@types/node": "npm:^22.19.15"
     typescript: "npm:^5.9.3"
     yaml: "npm:^2.8.2"

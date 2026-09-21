@@ -206,11 +206,20 @@ test("CLI and a real stdio MCP client share operations, schemas, resources, and 
     const mcpReport = await client.callTool({ name: "summarize", arguments: { from: "2026-09-21", to: "2026-09-21" } });
     const content = z.array(z.object({ type: z.literal("text"), text: z.string() })).parse(mcpReport.content);
     assert.deepEqual(JSON.parse(content[0]?.text ?? "null"), cliCall(root, "day", "2026-09-21"));
+    const fhir = await client.callTool({ name: "export_fhir", arguments: { patient_id: "example-person" } });
+    assert.notEqual(fhir.isError, true);
+    const fhirContent = z.array(z.object({ type: z.literal("text"), text: z.string() })).parse(fhir.content);
+    assert.deepEqual(JSON.parse(fhirContent[0]?.text ?? "null"), cliCall(root, "export", "fhir5", "--patient-id", "example-person"));
+    const filteredFhir = await client.callTool({ name: "export_fhir", arguments: { patient_id: "example-person", from: "2026-09-21", to: "2026-09-21" } });
+    const filteredContent = z.array(z.object({ type: z.literal("text"), text: z.string() })).parse(filteredFhir.content);
+    assert.deepEqual(JSON.parse(filteredContent[0]?.text ?? "null"), cliCall(root, "export", "fhir5", "--patient-id", "example-person", "--from", "2026-09-21", "--to", "2026-09-21"));
+    assert.throws(() => cliCall(root, "export", "fhir4", "--patient-id", "example-person"));
+    assert.throws(() => cliCall(root, "export", "fhir5"));
     const bad = await client.callTool({ name: "log_meal", arguments: { meal: { id: "bad" } } });
     assert.equal(bad.isError, true);
     const resources = await client.listResources();
-    assert.equal(resources.resources.length, 3);
-    for (const uri of ["trophe://guide", "trophe://schema-guide", "trophe://schemas"]) {
+    assert.equal(resources.resources.length, 4);
+    for (const uri of ["trophe://guide", "trophe://schema-guide", "trophe://schemas", "trophe://fhir-guide"]) {
       const resource = await client.readResource({ uri });
       assert.equal(resource.contents.length, 1);
     }

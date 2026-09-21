@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { exportFhir, fhirExportSchema } from "./fhir.js";
 import {
   dateSchema, foodSchema, idSchema, mealInputSchema, mealSchema,
   nutrientKeys, profileSchema, rangeSchema, type Meal, type Nutrients, type Profile,
@@ -117,6 +118,13 @@ export function createActions(store: Store): Action[] {
       input => store.putMeal(input.meal, input.expected_revision)),
     action("list_meals", "List meals, including void records, within inclusive local date bounds.",
       rangeSchema, true, input => mealsInRange(input.from, input.to).meals),
+    action("export_fhir", "Export a FHIR R5 collection Bundle with a Patient and logged meal snapshots. Includes void meals as entered-in-error. Optional dates use the profile timezone.",
+      fhirExportSchema, true, input => {
+        const meals = input.from !== undefined && input.to !== undefined
+          ? mealsInRange(input.from, input.to).meals
+          : store.list("meal").map(id => store.readMeal(id));
+        return exportFhir(meals.map(value => value.record), input.patient_id);
+      }),
     action("summarize", "Compute daily and period totals from active meals. Unknown values and days without logs stay explicit.",
       rangeSchema, true, input => {
         const { profile, meals } = mealsInRange(input.from, input.to);

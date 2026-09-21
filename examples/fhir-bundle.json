@@ -1,0 +1,271 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:4416ff75-73d7-58d0-af02-a1bb1f6ca6c4",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "example-person",
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Nutrition journal subject: example-person. No demographics supplied.</p></div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:6e2508e6-73de-589e-a000-9453608cfb69",
+      "resource": {
+        "resourceType": "NutritionIntake",
+        "id": "6e2508e6-73de-589e-a000-9453608cfb69",
+        "identifier": [
+          {
+            "system": "https://github.com/flexpa/trophe/identifier/meal/example-person",
+            "value": "2026-09-21-breakfast"
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>breakfast: 2026-09-21T08:00:00-04:00 (completed).</p><ul><li>Example plain yogurt: 150 g; evidence: user.</li></ul><p>Fictional example: 150 g of the saved yogurt.</p></div>"
+        },
+        "contained": [
+          {
+            "resourceType": "NutritionProduct",
+            "id": "item-1",
+            "status": "active",
+            "code": {
+              "text": "Example plain yogurt"
+            },
+            "nutrient": [
+              {
+                "item": {
+                  "concept": {
+                    "text": "Energy"
+                  }
+                },
+                "amount": [
+                  {
+                    "numerator": {
+                      "value": 105,
+                      "unit": "kcal",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "kcal"
+                    },
+                    "denominator": {
+                      "value": 150,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    }
+                  }
+                ]
+              },
+              {
+                "item": {
+                  "concept": {
+                    "text": "Protein"
+                  }
+                },
+                "amount": [
+                  {
+                    "numerator": {
+                      "value": 15,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    },
+                    "denominator": {
+                      "value": 150,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    }
+                  }
+                ]
+              },
+              {
+                "item": {
+                  "concept": {
+                    "text": "Carbohydrate"
+                  }
+                },
+                "amount": [
+                  {
+                    "numerator": {
+                      "value": 6,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    },
+                    "denominator": {
+                      "value": 150,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    }
+                  }
+                ]
+              },
+              {
+                "item": {
+                  "concept": {
+                    "text": "Fat"
+                  }
+                },
+                "amount": [
+                  {
+                    "numerator": {
+                      "value": 2.25,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    },
+                    "denominator": {
+                      "value": 150,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    }
+                  }
+                ]
+              },
+              {
+                "item": {
+                  "concept": {
+                    "text": "Dietary fiber"
+                  }
+                },
+                "amount": [
+                  {
+                    "numerator": {
+                      "value": 0,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    },
+                    "denominator": {
+                      "value": 150,
+                      "unit": "g",
+                      "system": "http://unitsofmeasure.org",
+                      "code": "g"
+                    }
+                  }
+                ]
+              }
+            ],
+            "note": [
+              {
+                "text": "Evidence method: user."
+              },
+              {
+                "text": "Source: Fictional example values for the quick start."
+              },
+              {
+                "text": "Saved food ID: example-yogurt"
+              }
+            ]
+          }
+        ],
+        "status": "completed",
+        "code": {
+          "text": "breakfast"
+        },
+        "subject": {
+          "reference": "urn:uuid:4416ff75-73d7-58d0-af02-a1bb1f6ca6c4"
+        },
+        "occurrenceDateTime": "2026-09-21T08:00:00-04:00",
+        "reportedBoolean": true,
+        "consumedItem": [
+          {
+            "type": {
+              "text": "Food or fluid"
+            },
+            "nutritionProduct": {
+              "reference": {
+                "reference": "#item-1"
+              }
+            },
+            "amount": {
+              "value": 150,
+              "unit": "g",
+              "system": "http://unitsofmeasure.org",
+              "code": "g"
+            }
+          }
+        ],
+        "ingredientLabel": [
+          {
+            "nutrient": {
+              "concept": {
+                "text": "Energy"
+              }
+            },
+            "amount": {
+              "value": 105,
+              "unit": "kcal",
+              "system": "http://unitsofmeasure.org",
+              "code": "kcal"
+            }
+          },
+          {
+            "nutrient": {
+              "concept": {
+                "text": "Protein"
+              }
+            },
+            "amount": {
+              "value": 15,
+              "unit": "g",
+              "system": "http://unitsofmeasure.org",
+              "code": "g"
+            }
+          },
+          {
+            "nutrient": {
+              "concept": {
+                "text": "Carbohydrate"
+              }
+            },
+            "amount": {
+              "value": 6,
+              "unit": "g",
+              "system": "http://unitsofmeasure.org",
+              "code": "g"
+            }
+          },
+          {
+            "nutrient": {
+              "concept": {
+                "text": "Fat"
+              }
+            },
+            "amount": {
+              "value": 2.25,
+              "unit": "g",
+              "system": "http://unitsofmeasure.org",
+              "code": "g"
+            }
+          },
+          {
+            "nutrient": {
+              "concept": {
+                "text": "Dietary fiber"
+              }
+            },
+            "amount": {
+              "value": 0,
+              "unit": "g",
+              "system": "http://unitsofmeasure.org",
+              "code": "g"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Fictional example: 150 g of the saved yogurt."
+          }
+        ]
+      }
+    }
+  ]
+}

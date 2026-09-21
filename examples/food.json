@@ -1,0 +1,10 @@
+{
+  "food": {
+    "id": "example-yogurt",
+    "name": "Example plain yogurt",
+    "serving": { "quantity": 100, "unit": "g" },
+    "nutrients": { "kcal": 70, "protein_g": 10, "carbs_g": 4, "fat_g": 1.5, "fiber_g": 0 },
+    "evidence": { "method": "user", "source": "Fictional example values for the quick start." },
+    "notes": "Replace these values with the label of the product you use."
+  }
+}

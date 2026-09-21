@@ -1,0 +1,9 @@
+{
+  "meal": {
+    "id": "2026-09-21-breakfast",
+    "eaten_at": "2026-09-21T08:00:00-04:00",
+    "occasion": "breakfast",
+    "items": [{ "food_id": "example-yogurt", "servings": 1.5 }],
+    "notes": "Fictional example: 150 g of the saved yogurt."
+  }
+}

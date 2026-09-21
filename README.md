@@ -9,9 +9,6 @@ Tell your agent what you ate, show it a label or meal photo, or ask how your wee
 looks. The agent interprets the request. Trophe stores the evidence, checks the
 records, and does the arithmetic.
 
-Inspired by [Kinbook](https://github.com/flexpa/kinbook): a small local tool with
-shared actions behind a CLI and MCP server. This is an independent repository.
-
 ## Design
 
 ```text

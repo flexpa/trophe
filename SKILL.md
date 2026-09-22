@@ -5,7 +5,7 @@ description: Operate a local Trophe nutrition journal through its CLI or MCP too
 
 # Trophe
 
-Use the configured MCP tools or `node /absolute/path/to/trophe/dist/cli.js` with
+Use the configured MCP tools or `bun /absolute/path/to/trophe/src/cli.ts` with
 `--data /absolute/path/to/journal`. Read `get_profile` first to learn the timezone,
 dated targets, and personal notes. Initialize only when the user wants a new journal.
 

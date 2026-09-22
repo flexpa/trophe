@@ -30,18 +30,17 @@ to read directly. If indexing becomes useful, it can be rebuilt from the files.
 
 ## Start
 
-Requires Node.js 22 or newer and Yarn 4.14.1.
+Requires Bun 1.3.13 or newer.
 
 ```sh
-yarn install
-yarn build
+bun install
 
 # Default data location: ~/.trophe
-yarn trophe init --timezone America/Toronto
-yarn trophe food put --input examples/food.json
-yarn trophe meal log --input examples/meal.json
-yarn trophe day 2026-09-21
-yarn trophe validate
+bun run trophe init --timezone America/Toronto
+bun run trophe food put --input examples/food.json
+bun run trophe meal log --input examples/meal.json
+bun run trophe day 2026-09-21
+bun run trophe validate
 ```
 
 The examples are fictional. They are added only when you run these commands.
@@ -49,7 +48,7 @@ To use a separate example journal, add `--data ./data` to **every** command.
 `TROPHE_HOME` can also set a fixed data directory. An absolute path is best in
 agent configuration. Opening a missing journal fails; only `init` creates one.
 
-The executable is `node /absolute/path/to/trophe/dist/cli.js`. `yarn trophe` is a
+The executable is `bun /absolute/path/to/trophe/src/cli.ts`. `bun run trophe` is a
 repository shortcut. Command results are JSON, or raw NDJSON for NDJSON exports.
 Errors go to stderr.
 
@@ -80,7 +79,7 @@ arguments: for example, `{ "meal": { ... } }`.
 ## Native NDJSON export
 
 ```sh
-yarn trophe export ndjson > journal.ndjson
+bun run trophe export ndjson > journal.ndjson
 ```
 
 This exports the profile, all saved foods, and all meals, including void records.
@@ -97,16 +96,16 @@ for ordering and format details. Markdown remains the source of truth.
 
 ```sh
 # Export all logged meals. Supply the ID for the journal's subject.
-yarn trophe export fhir5 --patient-id example-person > nutrition.fhir.json
+bun run trophe export fhir5 --patient-id example-person > nutrition.fhir.json
 
 # Optional inclusive dates use the journal's configured timezone.
-yarn trophe export fhir5 --patient-id example-person \
+bun run trophe export fhir5 --patient-id example-person \
   --from 2026-09-01 --to 2026-09-30 > september.fhir.json
 
 # FHIR NDJSON uses one resource type per file.
-yarn trophe export fhir5 --patient-id example-person \
+bun run trophe export fhir5 --patient-id example-person \
   --format ndjson --resource-type Patient > Patient.ndjson
-yarn trophe export fhir5 --patient-id example-person \
+bun run trophe export fhir5 --patient-id example-person \
   --format ndjson --resource-type NutritionIntake > NutritionIntake.ndjson
 ```
 
@@ -135,9 +134,9 @@ Agents with shell access can use the CLI. Agents with MCP support can use:
 {
   "mcpServers": {
     "trophe": {
-      "command": "node",
+      "command": "bun",
       "args": [
-        "/absolute/path/to/trophe/dist/cli.js",
+        "/absolute/path/to/trophe/src/cli.ts",
         "mcp",
         "--data",
         "/absolute/path/to/your/nutrition-journal"
@@ -200,8 +199,8 @@ separately. Voided meals remain readable but are excluded from totals.
 ## Development
 
 ```sh
-yarn check
-yarn test
+bun run check
+bun test
 ```
 
 The tests cover persisted records, duplicate retries, serving calculations,

@@ -9,8 +9,8 @@ This export does not target FHIR R4 or a receiver-specific implementation guide.
 ## Interfaces
 
 ```sh
-yarn trophe export fhir5 --patient-id example-person > nutrition.fhir.json
-yarn trophe export fhir5 --patient-id example-person \
+bun run trophe export fhir5 --patient-id example-person > nutrition.fhir.json
+bun run trophe export fhir5 --patient-id example-person \
   --from 2026-09-01 --to 2026-09-30 > september.fhir.json
 ```
 
@@ -37,9 +37,9 @@ Export is read-only.
 ## NDJSON
 
 ```sh
-yarn trophe export fhir5 --patient-id example-person \
+bun run trophe export fhir5 --patient-id example-person \
   --format ndjson --resource-type Patient > Patient.ndjson
-yarn trophe export fhir5 --patient-id example-person \
+bun run trophe export fhir5 --patient-id example-person \
   --format ndjson --resource-type NutritionIntake > NutritionIntake.ndjson
 ```
 

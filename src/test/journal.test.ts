@@ -13,7 +13,7 @@ import { foodSchema, mealSchema } from "../schema.js";
 import { openStore } from "../store.js";
 
 const directories: string[] = [];
-const cli = fileURLToPath(new URL("../cli.js", import.meta.url));
+const cli = fileURLToPath(new URL("../../src/cli.ts", import.meta.url));
 const exampleFood = JSON.parse(readFileSync(new URL("../../examples/food.json", import.meta.url), "utf8"));
 const exampleMeal = JSON.parse(readFileSync(new URL("../../examples/meal.json", import.meta.url), "utf8"));
 

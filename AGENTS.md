@@ -1,7 +1,7 @@
 # Working on Trophe
 
-Trophe is an independent TypeScript repository. Use Yarn. Run `yarn check` and
-`yarn test` after code changes.
+Trophe is an independent TypeScript repository. Use Bun. Run `bun run check` and
+`bun test` after code changes.
 
 - Keep business rules in `src/actions.ts`, validation in `src/schema.ts`, and
   persistence in `src/store.ts`. CLI and MCP are adapters.
